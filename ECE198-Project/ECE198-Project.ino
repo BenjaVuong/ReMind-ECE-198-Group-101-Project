@@ -95,6 +95,8 @@
 #define NOTE_D8 4699
 #define NOTE_DS8 4978
 
+const int buttonSounds[9] {NOTE_C3, NOTE_E3, NOTE_G3, NOTE_C4, NOTE_E4, NOTE_G4, NOTE_C5, NOTE_E5, NOTE_G5};
+
 // Button Pins: All Pulldown
 const byte buttonPins[9] {3, 4, 7, 8, 9, 10, 11, 12, A4};
 
@@ -226,7 +228,10 @@ void loop() {
 
         ledDisplayOn( sequence[i] );
         timestamp_ms = millis();
-        while ( (millis() - timestamp_ms) < showTimeInterval_ms ) {};
+        buttonSound( sequence[i] );
+        while ( (millis() - timestamp_ms) < showTimeInterval_ms ) {
+
+        };
 
         ledDisplayOff();
         timestamp_ms = millis();
@@ -249,6 +254,7 @@ void loop() {
         while ( buttonState == 0 ) { 
           buttonRead(); 
         };  
+        buttonSound( buttonState );
 
 
         // if they press a button, check if they selected the right one
@@ -466,5 +472,9 @@ void failureSound() {
   tone(buzzerPin, NOTE_C4, 400);
   delay(450);
   noTone(buzzerPin);
+}
+
+void buttonSound( byte state ) {
+  tone(buzzerPin, buttonSounds[state], showTimeInterval_ms);
 }
 
