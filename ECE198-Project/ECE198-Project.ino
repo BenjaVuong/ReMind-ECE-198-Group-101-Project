@@ -1,4 +1,6 @@
 // C++ code
+// Include SoftwareSerial so we can talk to the ESP
+#include <SoftwareSerial.h>
 
 // ##########################################################################################################
 // ####################################### CONST DEFINITIONS ################################################
@@ -95,7 +97,7 @@
 #define NOTE_D8 4699
 #define NOTE_DS8 4978
 
-const int buttonSounds[9] {NOTE_C3, NOTE_E3, NOTE_G3, NOTE_C4, NOTE_E4, NOTE_G4, NOTE_C5, NOTE_E5, NOTE_G5};
+const int buttonSounds[9] {NOTE_C3, NOTE_E3, NOTE_G3, NOTE_B3, NOTE_C4, NOTE_E4, NOTE_G4, NOTE_B4, NOTE_C5};
 
 // Button Pins: All Pulldown
 const byte buttonPins[9] {3, 4, 7, 8, 9, 10, 11, 12, A4};
@@ -103,6 +105,8 @@ const byte buttonPins[9] {3, 4, 7, 8, 9, 10, 11, 12, A4};
 // buzzer pin
 int buzzerPin = 13;
 
+// UART Connection to ESP
+SoftwareSerial ArduinoSerial(0, 1); // RX 0, TX 1
 
 // LED1 PIN
 const byte led9pin{ A5 };
@@ -136,11 +140,9 @@ unsigned long showTimeInterval_ms{ 500 };
 
 
 // Button variables
-byte lastReading{ 0 };
 byte buttonState{ 0 };
 byte reading{ 0 };
-unsigned long lastButtonStateChange{ 0 };
-unsigned long buttonStateChangeDelay{ 200 };
+byte lastReading{ 0 };
 unsigned long lastDebounceTime{ 0 };
 unsigned long debounceDelay{ 50 };
 
@@ -169,7 +171,10 @@ void setup() {
   pinMode(clockPin, OUTPUT);
   pinMode(dataPin, OUTPUT);
   pinMode(buzzerPin, OUTPUT);
+
+  // Set up the serial
 	Serial.begin(9600);
+  ArduinoSerial.begin(3200);
 
   ledDisplayOff();
 
@@ -200,7 +205,7 @@ void loop() {
     case MENU:
 
       // press any key to start (delay, generate sequence, switch to show)
-      if ( buttonState != 0){
+      if ( buttonState != 0 ){
 
            // make the new random sequence for game
           generateRandomSequence( sequence );   
@@ -302,8 +307,15 @@ void loop() {
 
       ledDisplayFail();
       failureSound();
+
+      // Tell ESP about high score
+      ArduinoSerial.print("Score: ");
+      ArduinoSerial.print( gameRound - 1 );
+      ArduinoSerial.println("\0");
+
       delay(500);
       ledDisplayOff();
+      buttonState = 0;
       // state: FAIL -> MENU
       state = MENU;
       break;
@@ -407,7 +419,7 @@ void ledDisplayStart() {
 
   for ( byte i{1}; i <= 9; i++ ) {
     ledDisplayOn( i );
-    delay(50);
+    delay(100);
   }
 
   ledDisplayOff();
@@ -419,7 +431,6 @@ void ledDisplayStart() {
 /* ========================== Button Functions ===============================*/
 // FUNCTION: Alters the button state according to which button is pressed by the user
 //   Debounces input
-//   Does not accept inputs 200ms after valid input
 void buttonRead() {
 
   // ================== PRESS DETECTION ====================
@@ -436,7 +447,19 @@ void buttonRead() {
     reading = 0;
   }
 
-  buttonState = reading;
+
+  // Debouncing ---------------
+  if (reading != lastReading) {
+    lastDebounceTime = millis();
+  }
+
+  if ((millis() - lastDebounceTime) > debounceDelay) {
+    if (reading != buttonState) {
+      buttonState = reading;
+    }
+  }
+
+  lastReading = reading;
   
 }
 
