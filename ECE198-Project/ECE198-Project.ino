@@ -97,16 +97,16 @@
 #define NOTE_D8 4699
 #define NOTE_DS8 4978
 
-const int buttonSounds[9] {NOTE_C3, NOTE_E3, NOTE_G3, NOTE_B3, NOTE_C4, NOTE_E4, NOTE_G4, NOTE_B4, NOTE_C5};
+const int buttonSounds[9]{ NOTE_C3, NOTE_E3, NOTE_G3, NOTE_B3, NOTE_C4, NOTE_E4, NOTE_G4, NOTE_B4, NOTE_C5 };
 
 // Button Pins: All Pulldown
-const byte buttonPins[9] {3, 4, 7, 8, 9, 10, 11, 12, A4};
+const byte buttonPins[9]{ 3, 4, 7, 8, 9, 10, 11, 12, A4 };
 
 // buzzer pin
 int buzzerPin = 13;
 
 // UART Connection to ESP
-SoftwareSerial ArduinoSerial(0, 1); // RX 0, TX 1
+SoftwareSerial ArduinoSerial(0, 1);  // RX 0, TX 1
 
 // LED1 PIN
 const byte led9pin{ A5 };
@@ -118,10 +118,10 @@ const byte dataPin{ 2 };
 // Randomization
 const byte analogRandomPin{ A0 };
 const byte sequenceCap{ 30 };
-byte sequence[sequenceCap] {};     // stores the sequence for a game
+byte sequence[sequenceCap]{};  // stores the sequence for a game
 
 // State Logic
-enum GameState {    // defines different states
+enum GameState {  // defines different states
   MENU,
   SHOW,
   TEST,
@@ -129,13 +129,13 @@ enum GameState {    // defines different states
   WIN
 };
 
-GameState state = MENU;   // assigns MENU state as default state
-byte gameRound{1};
+GameState state = MENU;  // assigns MENU state as default state
+byte gameRound{ 1 };
 
 
 // Time
 
-unsigned long timestamp_ms{0};
+unsigned long timestamp_ms{ 0 };
 unsigned long showTimeInterval_ms{ 500 };
 
 
@@ -161,7 +161,7 @@ void setup() {
   pinMode(LED_BUILTIN, OUTPUT);
 
   // Button Setup
-  for (byte i{0}; i < 9; i++) {
+  for (byte i{ 0 }; i < 9; i++) {
     pinMode(buttonPins[i], INPUT);
   }
 
@@ -173,7 +173,7 @@ void setup() {
   pinMode(buzzerPin, OUTPUT);
 
   // Set up the serial
-	Serial.begin(9600);
+  Serial.begin(9600);
   ArduinoSerial.begin(3200);
 
   ledDisplayOff();
@@ -181,9 +181,8 @@ void setup() {
 
   /* ====================== GAME DATA INTIALIZATION =====================*/
   // Generate a random seed for random function
-  randomSeed(analogRead( analogRandomPin ));    
+  randomSeed(analogRead(analogRandomPin));
   state = MENU;
-
 }
 
 
@@ -205,43 +204,41 @@ void loop() {
     case MENU:
 
       // press any key to start (delay, generate sequence, switch to show)
-      if ( buttonState != 0 ){
+      if (buttonState != 0) {
 
-           // make the new random sequence for game
-          generateRandomSequence( sequence );   
+        // make the new random sequence for game
+        generateRandomSequence(sequence);
 
-//////////// !!!!!! some sounds and cool lights and whatnot can go here
-          ledDisplayStart();
-          gameStartSound();
-          delay(500);
-////////////
+        //////////// !!!!!! some sounds and cool lights and whatnot can go here
+        ledDisplayStart();
+        gameStartSound();
+        delay(500);
+        ////////////
 
-          // Reset game variables
-          gameRound = 1;
+        // Reset game variables
+        gameRound = 1;
 
-          // state: MENU -> SHOW
-          state = SHOW;
+        // state: MENU -> SHOW
+        state = SHOW;
       }
-      
+
       break;
 
 
     case SHOW:
 
       // light up leds according to sequence up to the ith led
-      for (byte i{0}; i < gameRound; i++) { 
+      for (byte i{ 0 }; i < gameRound; i++) {
 
-        ledDisplayOn( sequence[i] );
+        ledDisplayOn(sequence[i]);
         timestamp_ms = millis();
-        buttonSound( sequence[i] );
-        while ( (millis() - timestamp_ms) < showTimeInterval_ms ) {
-
+        buttonSound(sequence[i]);
+        while ((millis() - timestamp_ms) < showTimeInterval_ms) {
         };
 
         ledDisplayOff();
         timestamp_ms = millis();
-        while ( (millis() - timestamp_ms) < showTimeInterval_ms ) {};
-
+        while ((millis() - timestamp_ms) < showTimeInterval_ms) {};
       }
 
       // state: SHOW -> TEST
@@ -252,29 +249,28 @@ void loop() {
     case TEST:
 
       // MEMORY TEST
-      for (byte i{0}; i < gameRound; i++) { 
+      for (byte i{ 0 }; i < gameRound; i++) {
 
         // trap them here until they press a button
         buttonState = 0;
-        while ( buttonState == 0 ) { 
-          buttonRead(); 
-        };  
-        buttonSound( buttonState );
+        while (buttonState == 0) {
+          buttonRead();
+        };
+        buttonSound(buttonState);
 
 
         // if they press a button, check if they selected the right one
-        if ( buttonState != sequence[i] ) {
+        if (buttonState != sequence[i]) {
           // wrong answer, move to FAIL state
           state = FAIL;
           break;  // exit for loop to go to fail state
-        }   // if its correct then iterate to the next sequence value
+        }         // if its correct then iterate to the next sequence value
 
         // Trap the user until they release the button
         while (digitalRead(buttonPins[buttonState - 1]) == HIGH) {
-          ledDisplayOn( buttonState );    // light up the clicked button
+          ledDisplayOn(buttonState);  // light up the clicked button
         }
-        ledDisplayOff();                  // turn off button after its unpressed
-    
+        ledDisplayOff();  // turn off button after its unpressed
       }
 
       // if they user is in the FAIL state then break the case
@@ -287,7 +283,7 @@ void loop() {
       if (gameRound == sequenceCap) {  // win after 30 rounds
         state = WIN;
 
-      } else {            // move on to next round if not yet at 30
+      } else {  // move on to next round if not yet at 30
         gameRound++;
         // Show success LED pattern
         delay(1000);
@@ -309,8 +305,8 @@ void loop() {
       failureSound();
 
       // Tell ESP about high score
-      ArduinoSerial.print("Score: ");
-      ArduinoSerial.print( gameRound - 1 );
+      ArduinoSerial.print("Score:");
+      ArduinoSerial.print(gameRound - 1);
       ArduinoSerial.println("\0");
 
       delay(500);
@@ -326,9 +322,8 @@ void loop() {
 
       // state : WIN -> MENU
       state = MENU;
-      break;    
+      break;
   }
-
 }
 
 
@@ -341,13 +336,12 @@ void loop() {
 // ##########################################################################################################
 /* ========================== Random Functions ===============================*/
 
-// FUNCTION: Takes in the sequence array and randomizes its elements from [1,9] 
-void generateRandomSequence( byte sequence[] ) {
+// FUNCTION: Takes in the sequence array and randomizes its elements from [1,9]
+void generateRandomSequence(byte sequence[]) {
 
-  for ( byte i{0}; i < sequenceCap; i++ ) {
-    sequence[i] = random(1, 10);    // rand int [1,9]
+  for (byte i{ 0 }; i < sequenceCap; i++) {
+    sequence[i] = random(1, 10);  // rand int [1,9]
   }
-
 }
 
 
@@ -355,22 +349,21 @@ void generateRandomSequence( byte sequence[] ) {
 
 /* ========================== LED Functions ===============================*/
 // FUNCTION: Turns on the nth LED
-void ledDisplayOn( byte n ) {
+void ledDisplayOn(byte n) {
 
   ledDisplayOff();
-  
-  if (n == 9)  {
+
+  if (n == 9) {
     digitalWrite(led9pin, HIGH);
 
-  }  else if (n > 0)  {
-    byte led_n{1 << (n - 1)};
+  } else if (n > 0) {
+    byte led_n{ 1 << (n - 1) };
 
-    digitalWrite(latchPin, LOW);  // close the latch
-    shiftOut(dataPin, clockPin, MSBFIRST, led_n);   // light up the LED
-    digitalWrite(latchPin, HIGH); // open the latch
-    digitalWrite(latchPin, LOW);  // close the latch
+    digitalWrite(latchPin, LOW);                   // close the latch
+    shiftOut(dataPin, clockPin, MSBFIRST, led_n);  // light up the LED
+    digitalWrite(latchPin, HIGH);                  // open the latch
+    digitalWrite(latchPin, LOW);                   // close the latch
   }
-
 }
 
 
@@ -378,12 +371,11 @@ void ledDisplayOn( byte n ) {
 void ledDisplayOff() {
 
   digitalWrite(led9pin, LOW);
-  
-  digitalWrite(latchPin, LOW);  // close the latch
-  shiftOut(dataPin, clockPin, MSBFIRST, 0);  // clear data
-  digitalWrite(latchPin, HIGH); // open the latch
-  digitalWrite(latchPin, LOW); // open the latch
 
+  digitalWrite(latchPin, LOW);               // close the latch
+  shiftOut(dataPin, clockPin, MSBFIRST, 0);  // clear data
+  digitalWrite(latchPin, HIGH);              // open the latch
+  digitalWrite(latchPin, LOW);               // open the latch
 }
 
 
@@ -391,12 +383,11 @@ void ledDisplayOff() {
 void ledDisplayFail() {
 
   digitalWrite(led9pin, HIGH);
-  
-  digitalWrite(latchPin, LOW);  // close the latch
+
+  digitalWrite(latchPin, LOW);                        // close the latch
   shiftOut(dataPin, clockPin, MSBFIRST, 0b01010101);  // Odd lights lit
-  digitalWrite(latchPin, HIGH); // open the latch
-  digitalWrite(latchPin, LOW); // close the latch
-  
+  digitalWrite(latchPin, HIGH);                       // open the latch
+  digitalWrite(latchPin, LOW);                        // close the latch
 }
 
 
@@ -404,11 +395,11 @@ void ledDisplayFail() {
 void ledDisplaySuccess() {
 
   digitalWrite(led9pin, LOW);
-  
-  digitalWrite(latchPin, LOW);  // close the latch
+
+  digitalWrite(latchPin, LOW);                        // close the latch
   shiftOut(dataPin, clockPin, MSBFIRST, 0b10101010);  // Odd lights lit
-  digitalWrite(latchPin, HIGH); // open the latch
-  digitalWrite(latchPin, LOW); // close the latch
+  digitalWrite(latchPin, HIGH);                       // open the latch
+  digitalWrite(latchPin, LOW);                        // close the latch
 }
 
 // FUNCTION: Ignites all even LEDs
@@ -417,13 +408,12 @@ void ledDisplayStart() {
   digitalWrite(led9pin, LOW);
   digitalWrite(latchPin, LOW);  // close the latch
 
-  for ( byte i{1}; i <= 9; i++ ) {
-    ledDisplayOn( i );
+  for (byte i{ 1 }; i <= 9; i++) {
+    ledDisplayOn(i);
     delay(100);
   }
 
   ledDisplayOff();
-
 }
 
 
@@ -435,8 +425,8 @@ void buttonRead() {
 
   // ================== PRESS DETECTION ====================
   // Read the latest button press, store in 'reading'
-  bool buttonDetected{false};
-  for (byte i{0}; i < 9; i++) {
+  bool buttonDetected{ false };
+  for (byte i{ 0 }; i < 9; i++) {
     if (digitalRead(buttonPins[i]) == HIGH) {
       reading = i + 1;
       buttonDetected = true;
@@ -460,7 +450,6 @@ void buttonRead() {
   }
 
   lastReading = reading;
-  
 }
 
 
@@ -497,7 +486,6 @@ void failureSound() {
   noTone(buzzerPin);
 }
 
-void buttonSound( byte state ) {
+void buttonSound(byte state) {
   tone(buzzerPin, buttonSounds[state], showTimeInterval_ms);
 }
-
